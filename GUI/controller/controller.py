@@ -17,26 +17,19 @@ class dataController:
         self.curr_index_model_cache = 0
         self.curr_index_in_data = 0
 
-    def initBinFile(self,file_path):
-        print("initBinFile {}".format(file_path))
-        self.parser_lib = parseLib(file_path,
-                                   '/home/osboxes/log/new-log/files/icon_common.json',
-                                   None)
+    def initBinFile(self,file_path,json_path):
+
+        self.parser_lib = parseLib(file_path,json_path, None)
         self.domain_list = self.parser_lib.getDomainList()
         self.msg_list = self.parser_lib.getMsgList()
-        # print('get msg list {}'.format(self.msg_list))
 
 
     def initDB(self,db_path):
-        print("initDB {}".format(db_path))
-        self.parser_lib = parseLib('/home/osboxes/log/new-log/files/icon_log_emmc_full2',
-                                   '/home/osboxes/log/new-log/files/icon_common.json',
-                                   db_path)
+        self.parser_lib = parseLib(None, None, db_path)
         self.domain_list = self.parser_lib.getDomainList()
         self.msg_list = self.parser_lib.getMsgList()
 
     def getInitData(self):
-        print("getInitData")
         return self.domain_list
 
 

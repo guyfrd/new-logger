@@ -30,9 +30,6 @@ type_to_field_dict = {
 
 class parseLib:
     def __init__(self, bin_file, json_file, db_path):
-        json_f = open(json_file, "r")
-        json_text = json_f.read()
-        self.json_data = json.loads(json_text, object_pairs_hook=OrderedDict)
         self.meta_domain = []
         self.domain = []
         self.msg_type_name = []
@@ -41,14 +38,17 @@ class parseLib:
         self.compile_msg_struct = []
         self.meta_domain_dic = {}
 
-        json_f.close()
 
         if db_path:
             print(db_path)
             self.db = sqlite3.connect(db_path, uri=True)
             self.cur = self.db.cursor()
-            self.build_helper_lists(db_path)
+            self.retriveJSONfromDB()
         else:
+            json_f = open(json_file, "r")
+            json_text = json_f.read()
+            self.json_data = json.loads(json_text, object_pairs_hook=OrderedDict)
+            json_f.close()
             print("no db open {}".format(bin_file))
             bin_f = open(bin_file,"rb")
             self.bin_data = bin_f.read()
@@ -61,8 +61,8 @@ class parseLib:
             print("open db {}".format(new_db_path))
             self.db = sqlite3.connect(new_db_path, uri=True)
             self.cur = self.db.cursor()
-            self.build_helper_lists(None)
             self.initDb()
+            self.build_helper_lists(None)
             self.parse()
 
 
@@ -72,28 +72,29 @@ class parseLib:
 
     def build_helper_lists(self,db_path):
         for meta_domain_key in self.json_data.keys():
+            self.cur.execute("INSERT INTO meta_domain(meta_domain_text) VALUES(\'{}\')".format(meta_domain_key))
             self.meta_domain.append(meta_domain_key)
-
-        for meta_domain_key in self.json_data.keys():
             for domain_key in self.json_data[meta_domain_key].keys():
-                #self.cur.execute("INSERT INTO domain(domain_text) VALUES (?)", (domain_key,))
+                self.cur.execute("INSERT INTO domain(domain_text, meta_domain) VALUES(\'{}\',\'{}\')".format(domain_key,meta_domain_key))
                 self.domain.append(domain_key)
                 self.meta_domain_dic[domain_key] = meta_domain_key
-
-
-        for meta_domain_key in self.json_data.keys():
-            for domain_key in self.json_data[meta_domain_key].keys():
-                msg_struct_name_tmp= []
-                msg_struct_tmp= []
+                msg_struct_name_tmp = []
+                msg_struct_tmp = []
                 msg_compile_struct_tmp = []
                 for msg_type_key in self.json_data[meta_domain_key][domain_key].keys():
+                    msg_type_struct = self.json_data[meta_domain_key][domain_key][msg_type_key]
                     msg_struct_name_tmp.append(msg_type_key)
-                    msg_struct_tmp.append(self.json_data[meta_domain_key][domain_key][msg_type_key])
-                    msg_compile_struct = self.createCompileMsgStruct(self.json_data[meta_domain_key][domain_key][msg_type_key])
+                    msg_struct_tmp.append(msg_type_struct)
+                    str = "INSERT INTO msg_type(msg_type_name,msg_type_struct,domain) VALUES(\'{}\',\"{}\",\'{}\')".format(msg_type_key,msg_type_struct, domain_key)
+                    print(str)
+                    self.cur.execute(str)
+                    #------------------------------------------------------
+                    msg_compile_struct = self.createCompileMsgStruct(msg_type_struct)
                     msg_compile_struct_tmp.append(msg_compile_struct)
+                    #------------------------------------------------------
 
                     if not db_path:
-                        self.creteMsgTable(msg_type_key, self.json_data[meta_domain_key][domain_key][msg_type_key])
+                        self.creteMsgTable(msg_type_key, msg_type_struct)
 
                 self.compile_msg_struct.append(msg_compile_struct_tmp)
                 self.msg_type_struct.append(msg_struct_tmp)
@@ -101,6 +102,23 @@ class parseLib:
 
 
 
+    def retriveJSONfromDB(self):
+        self.cur.execute("SELECT meta_domain_text FROM meta_domain")
+        self.meta_domain = self.cur.fetchall()
+        self.cur.execute("SELECT domain_text FROM domain")
+
+        for i in self.cur.fetchall():
+            self.domain.append(i[0])
+
+        for i in self.domain:
+            temp_name = []
+            temp_struct = []
+            self.cur.execute( "SELECT * FROM msg_type WHERE domain =\'{}\'".format(i))
+            for j in self.cur.fetchall():
+                temp_name.append(j[1])
+                temp_struct.append(j[2])
+            self.msg_type_name.append(temp_name)
+            self.msg_type_struct.append(temp_struct)
 
 
 
@@ -251,22 +269,28 @@ class parseLib:
 
 
     def initDb(self):
+        self.cur.execute("DROP TABLE IF EXISTS meta_domain")
+
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS meta_domain(
+                            meta_domain_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            meta_domain_text text
+                            )""")
 
         self.cur.execute("DROP TABLE IF EXISTS domain")
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS domain(
                      domain_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                     domain_text text
+                     domain_text text,
+                     meta_domain text
                      )""")
 
-        self.cur.execute("DROP TABLE IF EXISTS sub_domain")
+        self.cur.execute("DROP TABLE IF EXISTS msg_type")
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS msg_type(
-                         domain_id int,
-                         msg_type_id integer,
-                         msg_type_text text,
-                         PRIMARY KEY (domain_id, msg_type_id)
-                         FOREIGN KEY (domain_id) REFERENCES domain(domain_id)
+                         msg_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         msg_type_name text,
+                         msg_type_struct text,
+                         domain text
                          )""")
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS messages(

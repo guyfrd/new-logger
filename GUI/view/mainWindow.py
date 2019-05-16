@@ -1,9 +1,11 @@
 import os
 import sys
+from PySide2.QtCore import QFile
 from PySide2.QtGui import QIcon, QKeySequence
-from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
+from PySide2.QtWidgets import QMainWindow, QMessageBox, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
 from GUI.controller.controller import dataController
 import re
+
 icon_path = ''
 if getattr(sys, 'frozen', False):
     icon_path = os.path.join(sys._MEIPASS,'resources')
@@ -13,7 +15,7 @@ else:
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-
+        self.json_path = ''
         self.dc = dataController()
         self.centralWidget = MainWidget(self.dc)
         self.setCentralWidget(self.centralWidget)
@@ -34,7 +36,7 @@ class MainWindow(QMainWindow):
         print("openJson")
         fileName, filtr =  QFileDialog.getOpenFileName(self)
         if fileName:
-            self.loadJsonFile(fileName)
+            self.loadJSONFile(fileName)
 
     def openDB(self):
         print("openDB")
@@ -86,15 +88,19 @@ class MainWindow(QMainWindow):
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
 
-
     def loadFile(self, fileName):
-        print("loadFile {} ".format(fileName))
-        self.dc.initBinFile(fileName)
+        file = QFile(fileName)
+        if self.json_path == '':
+            QMessageBox.warning(self, "Application", "load json file first\n")
+            return
+        self.dc.initBinFile(fileName, self.json_path)
         self.centralWidget.initDomainCombo()
 
-    def loadDb(self, fileName):
-        print("loadDb {}".format(fileName))
+    def loadJSONFile(self, fileName):
+        self.json_path = fileName
 
+
+    def loadDb(self, fileName):
         self.dc.initDB(fileName)
         self.centralWidget.initDomainCombo()
 
