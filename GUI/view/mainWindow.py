@@ -2,9 +2,10 @@ import os
 import sys
 from PySide2.QtCore import QFile
 from PySide2.QtGui import QIcon, QKeySequence
-from PySide2.QtWidgets import QMainWindow, QMessageBox, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
+from PySide2.QtWidgets import QMainWindow, QMessageBox, QTextEdit, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
 from GUI.controller.controller import dataController
 import re
+import datetime
 
 icon_path = ''
 if getattr(sys, 'frozen', False):
@@ -23,7 +24,7 @@ class MainWindow(QMainWindow):
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
-        self.resize(1500, 600)
+        self.resize(1500, 800)
 
 
     def open(self):
@@ -113,35 +114,44 @@ class MainWidget( QWidget):
     def __init__(self, controller):
         super(MainWidget, self).__init__()
         self.dc = controller
-
-        self.filterGroupBox_1 = QGroupBox("Filter by domain")
-        self.filterGroupBox_2 = QGroupBox("Filter by text")
+        self.curr_view_state = ''
 
         # >>>>>>>>>>>>INIT TREE VIEW <<<<<<<<<<<<<<<<<<<<
         self.msg_view = QTableView()
         self.msg_view.setAlternatingRowColors(True)
         self.msg_view.setSortingEnabled(True)
         self.msg_view.setSelectionBehavior(QTableView.SelectRows);
-
-        self.msg_expand_view = QTableView()
-        self.msg_expand_view.setAlternatingRowColors(True)
         self.fetch_up_button =  QPushButton("up")
         self.fetch_down_button =  QPushButton("down")
+        self.num_row_to_show_label= QLabel("lines to show:")
+        self.num_row_to_show_combbox = QComboBox()
+        self.num_row_to_show_combbox.addItems(['10', '50', '100', '200'])
 
         # layout #1 - dataView
         dataLayout = QGridLayout()
-        dataLayout.addWidget(self.fetch_down_button ,1 ,0,)
-        dataLayout.addWidget(self.fetch_up_button , 2, 0)
-
-        dataLayout.addWidget(self.msg_view, 0, 1, 3, 3)
-        dataLayout.addWidget(self.msg_expand_view, 0, 4, 3, 4)
-        dataLayout.setColumnMinimumWidth(0,60)
+        dataLayout.addWidget(self.msg_view, 0, 1, 8, 3)
+        dataLayout.addWidget(self.num_row_to_show_label, 0, 0)
+        dataLayout.addWidget(self.num_row_to_show_combbox, 1,0)
+        dataLayout.addWidget(self.fetch_down_button ,6 ,0,)
+        dataLayout.addWidget(self.fetch_up_button , 7, 0)
+        dataLayout.setColumnMinimumWidth(0,30)
         dataLayout.setColumnStretch(1, 30)
         dataLayout.setColumnStretch(2, 10)
 
+
+        self.metaGroupBox = QGroupBox("messages")
+        meta_Layout = QGridLayout()
+        self.num_msg_label = QLabel()
+        self.num_msg_label.setText("no messages")
+        meta_Layout.addWidget(self.num_msg_label)
+        self.metaGroupBox.setLayout(meta_Layout)
+
         self.sourceGroupBox = QGroupBox("Data")
         self.sourceGroupBox.setLayout(dataLayout)
+
+
         # >>>>>>filter group #1 <<<<<<<<<<<<,,
+        self.filterGroupBox_1 = QGroupBox("Filter by domain")
         self.filterDomainComboBox = QComboBox()
         self.filterDomainLabel = QLabel("Filter &domain:")
         self.filterDomainLabel.setBuddy(self.filterDomainComboBox)
@@ -149,13 +159,8 @@ class MainWidget( QWidget):
         self.filterMsgLabel = QLabel("Filter &Msg:")
         self.filterMsgLabel.setBuddy(self.filterDomainComboBox)
 
-        # checksboxes
-        self.sortCaseSensitivityCheckBox = QCheckBox("Case sensitive sorting")
-        self.filterCaseSensitivityCheckBox = QCheckBox("Case sensitive filter")
-        self.filterCaseSensitivityCheckBox.setChecked(True)
-        self.sortCaseSensitivityCheckBox.setChecked(True)
-
         # filter optons
+        self.filterGroupBox_2 = QGroupBox("Filter by text")
         self.filterPatternLineEdit = QLineEdit()
         self.filterPatternLineEdit.setText("init(system_start, system_shutdown), pam_busybox_shadow(login_attempt), FOTA_app()")
         self.filterPatternLabel = QLabel("&Filter pattern:")
@@ -168,14 +173,38 @@ class MainWidget( QWidget):
         open_text_layout.addWidget(self.filterPatternButton, 0, 12)
         self.filterGroupBox_2.setLayout(open_text_layout)
 
+        time_filter_layout = QGridLayout()
+        self.from_date_label= QLabel("from date")
+        self.from_date_line_edit = QLineEdit("2019-05-04")
+        self.from_hour_label = QLabel("from hour")
+        self.from_hour_line_edit = QLineEdit("12:39:48")
+        self.to_date_label = QLabel("to date")
+        self.to_date_line_edit = QLineEdit("2019-05-04")
+        self.to_hour_label = QLabel("to hour")
+        self.to_hour_line_edit = QLineEdit("12:40:20")
+        self.time_filter_button = QPushButton("Find")
+
+        time_filter_layout.addWidget(self.from_date_label, 0,0)
+        time_filter_layout.addWidget(self.from_date_line_edit, 0,1)
+        time_filter_layout.addWidget(self.from_hour_label, 0,2)
+        time_filter_layout.addWidget(self.from_hour_line_edit, 0,3)
+        time_filter_layout.addWidget(self.to_date_label, 0, 4)
+        time_filter_layout.addWidget(self.to_date_line_edit, 0, 5)
+        time_filter_layout.addWidget(self.to_hour_label, 0, 6)
+        time_filter_layout.addWidget(self.to_hour_line_edit, 0, 7)
+        time_filter_layout.addWidget(self.time_filter_button , 0, 8)
+
+        self.time_filter_groupBox = QGroupBox("Filter by time")
+        self.time_filter_groupBox.setLayout(time_filter_layout)
+
 
         self.filterDomainComboBox.currentIndexChanged.connect(self.domainComboChange)
         self.filterMsgComboBox.currentIndexChanged.connect(self.msgComboChange)
         self.fetch_up_button.clicked.connect(self.fetchMoreClicked)
         self.fetch_down_button.clicked.connect(self.fetchLessClicked)
         self.filterPatternButton.clicked.connect(self.openTextFeatchMsg)
-
-
+        self.num_row_to_show_combbox.currentIndexChanged.connect(self.numLineComboChange)
+        self.time_filter_button.clicked.connect(self.timeFilterButtonPushed)
 
         # LAYOUTS
         filterLayout_1 = QGridLayout()
@@ -190,8 +219,10 @@ class MainWidget( QWidget):
         # parent layout
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.sourceGroupBox,1)
+        mainLayout.addWidget(self.metaGroupBox)
         mainLayout.addWidget(self.filterGroupBox_1)
         mainLayout.addWidget(self.filterGroupBox_2)
+        mainLayout.addWidget(self.time_filter_groupBox)
         self.setLayout(mainLayout)
 
         self.setWindowTitle("log message parser")
@@ -202,46 +233,54 @@ class MainWidget( QWidget):
         self.filterDomainComboBox.addItem('ALL')
         self.filterDomainComboBox.addItems(self.dc.getInitData())
 
-    def domainComboChange(self, i):
+
+    def domainComboChange(self):
         if self.filterDomainComboBox.currentText() == '':
             return
         print("domainComboChange {}".format(self.filterDomainComboBox.currentText()))
-
+        self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
         if self.filterDomainComboBox.currentText() == 'ALL':
-            self.modle = self.dc.getAllMsg()
+            self.modle = self.dc.fetchAllMsg()
             self.filterMsgComboBox.clear()
         else:
             domain = self.filterDomainComboBox.currentText()
-            self.modle = self.dc.getDatabyDomain(domain)
+            self.modle = self.dc.fetchDatabyDomain(domain)
             self.filterMsgComboBox.clear()
             self.filterMsgComboBox.addItem("ALL")
             msg_by_domain = self.dc.getMsgListByDomain(self.filterDomainComboBox.currentIndex() - 1)
             self.filterMsgComboBox.addItems(msg_by_domain)
 
+        num_rows = self.dc.countRows()
+        rows_showed = self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
+        self.curr_view_state = 'domain'
         self.msg_view.setModel(self.modle)
 
     def msgComboChange(self):
         msg_type = self.filterMsgComboBox.currentText()
         if msg_type == 'ALL' or not msg_type:
             return
-
-        print("msgComboChange {}".format(msg_type))
-        self.modle = self.dc.getDataByMsg(msg_type)
+        self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
+        self.modle = self.dc.fetchDataByMsg(msg_type)
+        num_rows = self.dc.countRows()
+        rows_showed = self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(self.modle)
-
-
+        self.curr_view_state = 'msg'
 
     def fetchMoreClicked(self):
-        if self.filterDomainComboBox.currentText() == 'ALL':
-            model = self.dc.fetchMoreAllMsg()
-        else:
-            model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
-
+        model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
+        num_rows = self.dc.countRows()
+        rows_showed = self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.msg_view.setModel(model)
 
 
     def fetchLessClicked(self):
         modle = self.dc.fetchLess()
+        num_rows = self.dc.countRows()
+        rows_showed = self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.msg_view.setModel(modle)
 
     def openTextFeatchMsg(self):
@@ -250,4 +289,42 @@ class MainWidget( QWidget):
         for i in x:
             list[i[:i.find("(")]] = (i[i.find("(")+1:i.find(")")].split(', '))
         modle = self.dc.fetchOpenText(list)
+
+        num_rows = self.dc.countRows()
+        rows_showed =  self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(modle)
+        self.curr_view_state = 'domain'
+
+    def numLineComboChange(self):
+        if self.curr_view_state == 'domain':
+            self.domainComboChange()
+        elif self.curr_view_state == 'msg':
+            self.msgComboChange()
+
+        self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
+
+    def timeFilterButtonPushed(self):
+        from_d = self.from_date_line_edit.text()
+        from_h = self.from_hour_line_edit.text()
+        to_d = self.to_date_line_edit.text()
+        to_h = self.to_hour_line_edit.text()
+        domain = self.filterDomainComboBox.currentText()
+        msg = self.filterMsgComboBox.currentText()
+        try:
+            datetime.datetime.strptime(from_d, "%Y-%m-%d")
+            datetime.datetime.strptime(to_d, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+        try:
+            datetime.datetime.strptime(from_h, "%H:%M:%S")
+            datetime.datetime.strptime(to_h, "%H:%M:%S")
+        except ValueError:
+            raise ValueError("Incorrect data format, should be HH:MM:SS")
+
+        modle = self.dc.fetchBetweenDate(domain,msg,from_d,from_h ,to_d, to_h)
+        num_rows = self.dc.countRows()
+        rows_showed =  self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
+        self.msg_view.setModel(modle)
+        self.curr_view_state = 'domain'

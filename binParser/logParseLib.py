@@ -293,6 +293,9 @@ class parseLib:
                          domain text
                          )""")
 
+
+        self.cur.execute("DROP TABLE IF EXISTS messages")
+
         self.cur.execute("""CREATE TABLE IF NOT EXISTS messages(
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             msg_id INTEGER,
@@ -335,7 +338,7 @@ class parseLib:
     def queryMsgAll(self, arr_size):
         self.cur.execute("SELECT * FROM messages")
         print("queryMsgAll {}".format(self.cur))
-        return self.cur.fetchmany(arr_size)
+        return self.cur.fetchall()
 
     def fetchManyAllTable(self, arr_size):
         print("fetchManyAllTable")
@@ -352,9 +355,8 @@ class parseLib:
     def getMsgList(self):
         return self.msg_type_name
 
-    def getTableData(self,msg_type):
+    def getTableData(self):
         print("getTableData")
-        #self.cur.execute("SELECT * FROM {}".format(msg_type))
         return self.cur.description
 
     def getMsgMulti(self, msg_list):
@@ -374,8 +376,23 @@ class parseLib:
             select_str+= 'OR '
             select_str+= temp[i]
 
-        print(temp)
-        print(select_str)
-
         self.cur.execute(select_str)
         return self.cur.fetchall()
+
+
+    def queryDate(self,domain, from_d,from_h ,to_d, to_h):
+        exec_str = "SELECT * FROM messages WHERE "
+        if from_d == '' and to_d == '':
+            if from_h != '' and to_h == '':
+                exec_str += "hour >= \'{}\'".format(from_h)
+            elif from_h == '' and to_h != '':
+                exec_str += "hour <= \'{}\'".format(to_h)
+            else:
+                exec_str += "hour BETWEEN \'{}\' AND \'{}\'".format(from_h, to_h)
+        else:
+            exec_str += "date BETWEEN \'{}\' AND \'{}\' AND hour BETWEEN \'{}\' AND \'{}\' ".format(from_d,to_d,from_h, to_h)
+        print(exec_str)
+        self.cur.execute(exec_str)
+
+        return self.cur.fetchall()
+
