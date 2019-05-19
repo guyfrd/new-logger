@@ -6,6 +6,7 @@ from PySide2.QtGui import QStandardItemModel
 from PySide2.QtCore import Qt, QSortFilterProxyModel
 import cProfile
 
+from GUI.controller.dataList import dataList
 
 class dataController:
     def __init__(self):
@@ -18,6 +19,7 @@ class dataController:
         self.date_left_to_show = 0
         self.date_show_so_far = 0
         self.model_size = 100
+        self.data_list = None
 
     def initBinFile(self,file_path,json_path):
         self.parser_lib = parseLib(file_path,json_path, None)
@@ -35,153 +37,83 @@ class dataController:
         return self.domain_list
 
 
-    def createModel(self, table):
-        print("createModel")
-        self.curr_data_size = len(self.curr_data)
-        data_to_fetch = min(self.date_left_to_show , self.model_size)
-        table_data = self.parser_lib.getTableData()
-
-        model = QStandardItemModel(data_to_fetch, len(table_data) - 1)
-        print("+++++{}".format(model.rowCount()))
-        for i in range(1, len(table_data)):
-            model.setHeaderData(i -1 , Qt.Horizontal, table_data[i][0])
-
-        for row in range(data_to_fetch):
-            data = next(self.cycle_list)
-            for col in range(0, len(table_data)-1):
-                model.setData(model.index(row, col), str(data[col+1]))
-
-        self.date_left_to_show -= data_to_fetch
-        self.date_show_so_far += data_to_fetch
-        self.curr_model_num_display += 1
-        self.model_cache.append(model)
-        return model
-
-    def fetchAllMsg(self):
-        print("getAllMsg")
+    def fetchJumpToMsg(self, msg_num):
         self.curr_data = self.parser_lib.queryMsgAll(self.model_size)
-        num_msg = len(self.curr_data)
-        print(num_msg)
-        self.date_left_to_show = num_msg
+        num_of_block = int(msg_num) // self.model_size
+        print("fetchJumpTo num_of_bloxk:{}".format(num_of_block))
+
         self.cycle_list = cycle(self.curr_data)
+        self.date_left_to_show = len(self.curr_data)
+
 
         self.date_show_so_far = 0
         self.curr_model_num_display = 0
         self.model_cache = []
 
-        self.curr_data_size = len(self.curr_data)
-        model = self.createModel('messages')
+        model = self.createModelIndex(0, self.model_size)
 
         return model
-
-    # def fetchMoreAllMsg(self):
-    #
-    #     if self.curr_model_num_display == len(self.model_cache):
-    #         self.curr_data = self.parser_lib.fetchManyAllTable(self.model_size)
-    #         self.cycle_list = cycle(self.curr_data)
-    #         model = self.createModel('messages')
-    #     else:
-    #         model = self.model_cache[self.curr_model_num_display]
-    #         self.curr_model_num_display +=1
-    #
-    #     print("---------------------------------")
-    #     print("fetchMoreAllMsg\ncurr_model_num_display {} model_cache_num {}".format(self.curr_model_num_display, len(self.model_cache)))
-    #
-    #     return model
 
 
     def getMsgListByDomain(self,domain_index):
         return self.msg_list[domain_index]
 
 
+    def fetchAllMsg(self):
+        self.curr_data = self.parser_lib.queryMsgAll(self.model_size)
+        col_num = self.parser_lib.getTableData()
+        self.data_list = dataList(self.curr_data,self.model_size, col_num)
+        model = next(self.data_list)
+        return model
+
     def fetchDataByMsg(self,msg):
         self.curr_data = self.parser_lib.queryMsgByType(msg)
-        self.cycle_list = cycle(self.curr_data)
-        num_msg = len(self.curr_data)
-        self.date_left_to_show = num_msg
-        print(num_msg)
-        print("getDataByMsg {} len {}".format(msg, len(self.curr_data)))
-
-        self.curr_model_num_display = 0
-        self.model_cache = []
-
-        model = self.createModel(msg)
-        self.date_show_so_far = 0
-
+        col_num = self.parser_lib.getTableData()
+        self.data_list = dataList(self.curr_data, self.model_size, col_num)
+        model = next(self.data_list)
         return model
 
     def fetchOpenText(self, list):
-        print("fetchOpenText {}".format(list))
         self.curr_data = self.parser_lib.getMsgMulti(list)
-        self.cycle_list = cycle(self.curr_data)
-
-        self.date_show_so_far = 0
-        self.curr_model_num_display = 0
-        self.model_cache = []
-
-        model = self.createModel('messages')
-
+        col_num = self.parser_lib.getTableData()
+        self.data_list = dataList(self.curr_data, self.model_size, col_num)
+        model = next(self.data_list)
         return model
 
 
     def fetchDatabyDomain(self, domain):
-        print('controller- getDataByDomain')
         self.curr_data = self.parser_lib.queryMsgByDomain(domain)
-        self.cycle_list = cycle(self.curr_data)
-        num_msg = len(self.curr_data)
-        self.date_left_to_show = num_msg
-
-        self.date_show_so_far = 0
-        self.curr_model_num_display = 0
-        self.model_cache = []
-
-        model = self.createModel('messages')
-
+        col_num = self.parser_lib.getTableData()
+        self.data_list = dataList(self.curr_data, self.model_size, col_num)
+        model = next(self.data_list)
         return model
 
     def fetchBetweenDate(self, domain, msg, from_d, from_h, to_d, to_h):
-
         self.curr_data = self.parser_lib.queryDate(domain, from_d, from_h, to_d, to_h)
-        self.cycle_list = cycle(self.curr_data)
-        self.date_left_to_show = len(self.curr_data)
-
-        print("getDataByMsg {} len {}".format(msg, len(self.curr_data)))
-        self.date_show_so_far = 0
-        self.curr_model_num_display = 0
-        self.model_cache = []
-
-        model = self.createModel(msg)
-
+        col_num = self.parser_lib.getTableData()
+        self.data_list = dataList(self.curr_data, self.model_size, col_num)
+        model = next(self.data_list)
         return model
 
 
-
-    def fetchMore(self, table):
-
-        if self.curr_model_num_display == len(self.model_cache):
-            model = self.createModel(table)
-        else:
-            model = self.model_cache[self.curr_model_num_display]
-            self.curr_model_num_display +=1
-
-        print("---------------------------------")
-        print("fetchMore\ncurr_model_num_display {} model_cache_num {}".format(self.curr_model_num_display, len(self.model_cache)))
-
-        return model
+    def fetchMore(self,  msg ='ALL'):
+        return next(self.data_list)
 
 
     def fetchLess(self):
+        return self.data_list.prev()
 
-        if self.curr_model_num_display == 1:
-            model = self.model_cache[0]
-        else:
-            self.curr_model_num_display -= 1
-            model = self.model_cache[self.curr_model_num_display-1]
-            self.date_show_so_far -= model.rowCount()
+    def dataShowedSoFar(self):
+        return self.data_list.getDataShowd()
 
-        print("---------------------------------")
-        print("fetchLess\ncurr_model_num_display {} model_cache_num {}".format(self.curr_model_num_display, len(self.model_cache)))
-        return model
+
+
+
+
+
+
+
+
 
     def numDomain(self, domain):
         if domain =='ALL':
@@ -198,7 +130,5 @@ class dataController:
         self.model_size = size
 
 
-    def dataShowedSoFar(self):
-        return self.date_show_so_far
     def countRows(self):
         return len(self.curr_data)
