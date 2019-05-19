@@ -396,3 +396,5 @@ class parseLib:
 
         return self.cur.fetchall()
 
+    def queryMsgBetweenID(self,from_id, to_id):
+        exec_str = "SELECT * FROM messages WHERE msg_id BETWEEN {} AND"

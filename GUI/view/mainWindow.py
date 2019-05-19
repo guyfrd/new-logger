@@ -9,9 +9,9 @@ import datetime
 
 icon_path = ''
 if getattr(sys, 'frozen', False):
-    icon_path = os.path.join(sys._MEIPASS,'resources')
+    icon_path = os.path.join(sys._MEIPASS,'files')
 else:
-    icon_path = os.path.join(sys.path[0], 'resources', 'images')
+    icon_path = os.path.join(sys.path[0], 'files', 'icons')
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
 
 
     def createActions(self):
-        icon_path = '/home/osboxes/log/new-log/files/icons/'
+        icon_path = '../../files/icons/'
         open_bin_file = os.path.join(icon_path,'bin.png')
 
         self.openAct = QAction( QIcon(open_bin_file),
@@ -126,19 +126,28 @@ class MainWidget( QWidget):
         self.num_row_to_show_label= QLabel("lines to show:")
         self.num_row_to_show_combbox = QComboBox()
         self.num_row_to_show_combbox.addItems(['10', '50', '100', '200'])
+        self.jump_to_msg_label= QLabel("jump to message")
+        self.jump_to_msg_lineEdit = QLineEdit()
+        self.jump_to_msg_button = QPushButton("Show")
+
 
         # layout #1 - dataView
         dataLayout = QGridLayout()
-        dataLayout.addWidget(self.msg_view, 0, 1, 8, 3)
+        dataLayout.addWidget(self.msg_view, 0, 1, 11, 3)
+        dataLayout.addWidget(self.jump_to_msg_label,3,0)
+        dataLayout.addWidget(self.jump_to_msg_lineEdit,4,0)
+        dataLayout.addWidget(self.jump_to_msg_button,5,0)
         dataLayout.addWidget(self.num_row_to_show_label, 0, 0)
         dataLayout.addWidget(self.num_row_to_show_combbox, 1,0)
-        dataLayout.addWidget(self.fetch_down_button ,6 ,0,)
-        dataLayout.addWidget(self.fetch_up_button , 7, 0)
+        dataLayout.addWidget(self.fetch_down_button ,9 ,0,)
+        dataLayout.addWidget(self.fetch_up_button , 10, 0)
         dataLayout.setColumnMinimumWidth(0,30)
         dataLayout.setColumnStretch(1, 30)
         dataLayout.setColumnStretch(2, 10)
+        self.sourceGroupBox = QGroupBox("Data")
+        self.sourceGroupBox.setLayout(dataLayout)
 
-
+        #>>>>>>>>>>>>>>meta box<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         self.metaGroupBox = QGroupBox("messages")
         meta_Layout = QGridLayout()
         self.num_msg_label = QLabel()
@@ -146,11 +155,9 @@ class MainWidget( QWidget):
         meta_Layout.addWidget(self.num_msg_label)
         self.metaGroupBox.setLayout(meta_Layout)
 
-        self.sourceGroupBox = QGroupBox("Data")
-        self.sourceGroupBox.setLayout(dataLayout)
 
 
-        # >>>>>>filter group #1 <<<<<<<<<<<<,,
+        # >>>>>>>>>>>>>>>>>>>>>combobox filter <<<<<<<<<<<<<<<<<<
         self.filterGroupBox_1 = QGroupBox("Filter by domain")
         self.filterDomainComboBox = QComboBox()
         self.filterDomainLabel = QLabel("Filter &domain:")
@@ -159,20 +166,28 @@ class MainWidget( QWidget):
         self.filterMsgLabel = QLabel("Filter &Msg:")
         self.filterMsgLabel.setBuddy(self.filterDomainComboBox)
 
-        # filter optons
+        filterLayout_1 = QGridLayout()
+        filterLayout_1.addWidget(self.filterDomainLabel, 0, 0, 1,1)
+        filterLayout_1.addWidget(self.filterDomainComboBox, 0, 1, 1, 10)
+        filterLayout_1.addWidget(self.filterMsgLabel,1,0,2,1)
+        filterLayout_1.addWidget(self.filterMsgComboBox, 1, 1,1,10)
+        self.filterGroupBox_1.setLayout(filterLayout_1)
+
+
+        #>>>>>>>>>>>>>>>>>>>>>>>.open text filter <<<<<<<<<<<<<<<<<<<<<,
         self.filterGroupBox_2 = QGroupBox("Filter by text")
         self.filterPatternLineEdit = QLineEdit()
         self.filterPatternLineEdit.setText("init(system_start, system_shutdown), pam_busybox_shadow(login_attempt), FOTA_app()")
         self.filterPatternLabel = QLabel("&Filter pattern:")
         self.filterPatternLabel.setBuddy(self.filterPatternLineEdit)
         self.filterPatternButton = QPushButton("Find")
-
         open_text_layout = QGridLayout()
         open_text_layout.addWidget(self.filterPatternLabel, 0, 0, 1 ,1)
         open_text_layout.addWidget(self.filterPatternLineEdit, 0, 1, 1, 11)
         open_text_layout.addWidget(self.filterPatternButton, 0, 12)
         self.filterGroupBox_2.setLayout(open_text_layout)
 
+        #>>>>>>>>>>>>>>> time filter  <<<<<<<<<<<<<<<<<<<<<<<<<<
         time_filter_layout = QGridLayout()
         self.from_date_label= QLabel("from date")
         self.from_date_line_edit = QLineEdit("2019-05-04")
@@ -197,7 +212,7 @@ class MainWidget( QWidget):
         self.time_filter_groupBox = QGroupBox("Filter by time")
         self.time_filter_groupBox.setLayout(time_filter_layout)
 
-
+        #>>>>>>>>>>>> function connect <<<<<<<<<<<<<<<<<<<<<<<,,
         self.filterDomainComboBox.currentIndexChanged.connect(self.domainComboChange)
         self.filterMsgComboBox.currentIndexChanged.connect(self.msgComboChange)
         self.fetch_up_button.clicked.connect(self.fetchMoreClicked)
@@ -205,16 +220,7 @@ class MainWidget( QWidget):
         self.filterPatternButton.clicked.connect(self.openTextFeatchMsg)
         self.num_row_to_show_combbox.currentIndexChanged.connect(self.numLineComboChange)
         self.time_filter_button.clicked.connect(self.timeFilterButtonPushed)
-
-        # LAYOUTS
-        filterLayout_1 = QGridLayout()
-        filterLayout_1.addWidget(self.filterDomainLabel, 0, 0, 1,1)
-        filterLayout_1.addWidget(self.filterDomainComboBox, 0, 1, 1, 10)
-
-        filterLayout_1.addWidget(self.filterMsgLabel,1,0,2,1)
-        filterLayout_1.addWidget(self.filterMsgComboBox, 1, 1,1,10)
-        self.filterGroupBox_1.setLayout(filterLayout_1)
-
+        self.jump_to_msg_button.clicked.connect(self.jumpToMsg)
 
         # parent layout
         mainLayout = QVBoxLayout()
@@ -328,3 +334,13 @@ class MainWidget( QWidget):
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(modle)
         self.curr_view_state = 'domain'
+
+    def jumpToMsg(self):
+
+        self.modle = self.dc.fetchJumpToMsg(self.jump_to_msg_lineEdit.text())
+        self.filterMsgComboBox.clear()
+        num_rows = self.dc.countRows()
+        rows_showed = self.dc.dataShowedSoFar()
+        self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
+        self.curr_view_state = 'domain'
+        self.msg_view.setModel(self.modle)
