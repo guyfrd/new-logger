@@ -39,20 +39,12 @@ class dataController:
 
     def fetchJumpToMsg(self, msg_num):
         self.curr_data = self.parser_lib.queryMsgAll(self.model_size)
-        num_of_block = int(msg_num) // self.model_size
-        print("fetchJumpTo num_of_bloxk:{}".format(num_of_block))
 
-        self.cycle_list = cycle(self.curr_data)
-        self.date_left_to_show = len(self.curr_data)
-
-
-        self.date_show_so_far = 0
-        self.curr_model_num_display = 0
-        self.model_cache = []
-
-        model = self.createModelIndex(0, self.model_size)
-
+        col_num = self.parser_lib.getTableData()
+        self.data_list = dataList(self.curr_data, self.model_size, col_num)
+        model = self.data_list.jumpToMsg(msg_num)
         return model
+
 
 
     def getMsgListByDomain(self,domain_index):
