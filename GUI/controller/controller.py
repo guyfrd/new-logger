@@ -1,10 +1,4 @@
 from binParser.logParseLib import parseLib
-from time import gmtime, strftime
-from itertools import cycle
-from PySide2.QtWidgets import QTreeWidgetItem
-from PySide2.QtGui import QStandardItemModel
-from PySide2.QtCore import Qt, QSortFilterProxyModel
-import cProfile
 
 from GUI.controller.dataList import dataList
 
@@ -13,13 +7,8 @@ class dataController:
 
         self.curr_data = []
         self.domain_list = []
-        self.cycle_list = None
-        self.model_cache = []
-        self.curr_index_model_cache = 0
-        self.date_left_to_show = 0
-        self.date_show_so_far = 0
-        self.model_size = 100
         self.data_list = None
+        self.parser_lib = None
 
     def initBinFile(self,file_path,json_path):
         self.parser_lib = parseLib(file_path,json_path, None)
@@ -28,7 +17,6 @@ class dataController:
 
 
     def initDB(self,db_path):
-
         self.parser_lib = parseLib(None, None, db_path)
         self.domain_list = self.parser_lib.getDomainList()
         self.msg_list = self.parser_lib.getMsgList()
@@ -39,7 +27,6 @@ class dataController:
 
     def fetchJumpToMsg(self, msg_num):
         self.curr_data = self.parser_lib.queryMsgAll(self.model_size)
-
         col_num = self.parser_lib.getTableData()
         self.data_list = dataList(self.curr_data, self.model_size, col_num)
         model = self.data_list.jumpToMsg(msg_num)
@@ -104,9 +91,6 @@ class dataController:
 
 
 
-
-
-
     def numDomain(self, domain):
         if domain =='ALL':
             num = self.parser_lib.countAll()
@@ -117,10 +101,8 @@ class dataController:
     def numMsg(self, msg):
         return self.parser_lib.countMsg(msg)
 
-
     def setModelSize(self, size):
         self.model_size = size
-
 
     def countRows(self):
         return len(self.curr_data)

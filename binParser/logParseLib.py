@@ -40,7 +40,6 @@ class parseLib:
 
 
         if db_path:
-            print(db_path)
             self.db = sqlite3.connect(db_path, uri=True)
             self.cur = self.db.cursor()
             self.retriveJSONfromDB()
@@ -49,7 +48,6 @@ class parseLib:
             json_text = json_f.read()
             self.json_data = json.loads(json_text, object_pairs_hook=OrderedDict)
             json_f.close()
-            print("no db open {}".format(bin_file))
             bin_f = open(bin_file,"rb")
             self.bin_data = bin_f.read()
             self.curr_byte = 0
@@ -58,13 +56,11 @@ class parseLib:
 
             tail += '.db'
             new_db_path = '../../files/' + tail
-            print("open db {}".format(new_db_path))
             self.db = sqlite3.connect(new_db_path, uri=True)
             self.cur = self.db.cursor()
             self.initDb()
             self.build_helper_lists(None)
             self.parse()
-
 
             bin_f.close()
             self.db.commit()
@@ -86,7 +82,6 @@ class parseLib:
                     msg_struct_name_tmp.append(msg_type_key)
                     msg_struct_tmp.append(msg_type_struct)
                     str = "INSERT INTO msg_type(msg_type_name,msg_type_struct,domain) VALUES(\'{}\',\"{}\",\'{}\')".format(msg_type_key,msg_type_struct, domain_key)
-                    print(str)
                     self.cur.execute(str)
                     #------------------------------------------------------
                     msg_compile_struct = self.createCompileMsgStruct(msg_type_struct)
@@ -150,14 +145,10 @@ class parseLib:
             curr_meta_string = self.meta_domain_dic[curr_domain_string]
             curr_msg_name = self.msg_type_name[curr_domain][curr_msg]
             curr_msg_struct = self.msg_type_struct[curr_domain][curr_msg]
-            # print("-----------------------------------------------------")
-            # print("curr_meta_string:{} curr_domain_string {}\ncurr_msg_name: {} curr_msg_struct: {}\ncurr_date: {}  curr_hour: {} curr_byte: {}"
-            #       .format(curr_meta_string,curr_domain_string , curr_msg_name, curr_msg_struct , curr_date, curr_hour, self.curr_byte))
 
             insert_str= ''
             if 'null' in curr_msg_struct and 'void' in curr_msg_struct.values():
                 insert_str = self.createInsertExp(curr_msg_id, curr_date, curr_hour,'null', curr_msg_name , None)
-                #print(insert_str)
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain ,msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ? )""",
@@ -165,9 +156,7 @@ class parseLib:
 
             elif 'char*' in curr_msg_struct .values():
                 decode_msg = self.readFlexMsg().rstrip('\x00')
-                # print("decode msg: {}".format(decode_msg))
                 insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'flex', curr_msg_name, decode_msg)
-                # print("insert_str: {}".format(insert_str))
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
@@ -175,9 +164,7 @@ class parseLib:
 
             else:
                 msg = self.readMsgStruct(curr_domain,curr_msg)
-                # print("msg: {}".format(msg))
                 insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'struct', curr_msg_name,msg)
-                # print("insert_str: {}".format(insert_str))
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id,date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
@@ -220,12 +207,9 @@ class parseLib:
         # build format string for the struct
 
         msg_struct = self.compile_msg_struct[domain][msg_type]
-        # print(msg_struct )
         unpack = msg_struct.unpack_from(self.bin_data, self.curr_byte)
         size = msg_struct.size
-        # print("struct size: {}".format(size))
         self.curr_byte += msg_struct.size
-        # print("format: {} unpack:{}".format(format, unpack))
 
         # convert from bytestring to string
         unpack_list = []
@@ -238,7 +222,6 @@ class parseLib:
 
         msg_with_value = {}
         index = 0
-        # print(unpack)
         for i in self.msg_type_struct[domain][msg_type]:
             msg_with_value[i] = unpack_list[index]
             index += 1
@@ -262,7 +245,6 @@ class parseLib:
                 create_table_str += ", {} {}".format(i, type_to_field_dict[msg[i]])
 
         create_table_str += ")"
-        print(create_table_str)
         self.cur.execute(drop_str)
         self.cur.execute(create_table_str)
         self.db.commit()
@@ -318,10 +300,7 @@ class parseLib:
         for i in msg:
             if msg[i] == 'void' or msg[i] == 'char*':
                 return
-
             format += struct_format_dict[msg[i]]
-        format_size = struct.calcsize(format)
-        # print("msg: {} format size : {}".format(msg, format_size))
 
         s = struct.Struct(format)
         return s
@@ -331,18 +310,14 @@ class parseLib:
         return  self.cur.fetchall()
 
     def queryMsgByType(self, msg_type):
-        print('queryMsgByType')
         self.cur.execute("SELECT * FROM {}".format(msg_type))
         return self.cur.fetchall()
 
     def queryMsgAll(self, arr_size):
         self.cur.execute("SELECT * FROM messages")
-        print("queryMsgAll {}".format(self.cur))
         return self.cur.fetchall()
 
     def fetchManyAllTable(self, arr_size):
-        print("fetchManyAllTable")
-
         data = self.cur.fetchmany(arr_size)
         return data
 
@@ -356,12 +331,10 @@ class parseLib:
         return self.msg_type_name
 
     def getTableData(self):
-        print("getTableData")
         return self.cur.description
 
     def getMsgMulti(self, msg_list):
         select_str = "SELECT * FROM messages WHERE "
-        print("createSelectExp")
         temp =[]
         if msg_list:
             for domain_key in msg_list:
@@ -391,10 +364,7 @@ class parseLib:
                 exec_str += "hour BETWEEN \'{}\' AND \'{}\'".format(from_h, to_h)
         else:
             exec_str += "date BETWEEN \'{}\' AND \'{}\' AND hour BETWEEN \'{}\' AND \'{}\' ".format(from_d,to_d,from_h, to_h)
-        print(exec_str)
         self.cur.execute(exec_str)
 
         return self.cur.fetchall()
 
-    def queryMsgBetweenID(self,from_id, to_id):
-        exec_str = "SELECT * FROM messages WHERE msg_id BETWEEN {} AND"

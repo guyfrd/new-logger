@@ -29,18 +29,15 @@ class MainWindow(QMainWindow):
 
     def open(self):
         fileName, filtr =  QFileDialog.getOpenFileName(self)
-        print("open file")
         if fileName:
             self.loadFile(fileName)
 
     def openJson(self):
-        print("openJson")
         fileName, filtr =  QFileDialog.getOpenFileName(self)
         if fileName:
             self.loadJSONFile(fileName)
 
     def openDB(self):
-        print("openDB")
         fileName, filtr =  QFileDialog.getOpenFileName(self)
         if fileName:
             self.loadDb(fileName)
@@ -243,7 +240,6 @@ class MainWidget( QWidget):
     def domainComboChange(self):
         if self.filterDomainComboBox.currentText() == '':
             return
-        print("domainComboChange {}".format(self.filterDomainComboBox.currentText()))
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
         if self.filterDomainComboBox.currentText() == 'ALL':
             self.modle = self.dc.fetchAllMsg()
@@ -336,7 +332,6 @@ class MainWidget( QWidget):
         self.curr_view_state = 'domain'
 
     def jumpToMsg(self):
-
         self.modle = self.dc.fetchJumpToMsg(self.jump_to_msg_lineEdit.text())
         self.filterMsgComboBox.clear()
         num_rows = self.dc.countRows()
