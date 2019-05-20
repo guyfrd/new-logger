@@ -1,4 +1,5 @@
 import json
+import sys
 import os
 import struct
 from collections import OrderedDict
@@ -13,7 +14,8 @@ struct_format_dict = {
     'int16' : 'h',
     'uint32' : 'i', #four byte
     'float' : 'f',
-    'char[15#]' : '15p'
+    'char[15#]' : '15p',
+    'bool': '?'
 }
 
 type_to_field_dict = {
@@ -23,7 +25,8 @@ type_to_field_dict = {
     'int16' : 'INTEGER',
     'uint32' : 'INTEGER', #four byte
     'float' : 'REAL',
-    'char[15#]' : 'TEXT'
+    'char[15#]' : 'TEXT',
+    'bool' : 'TEXT'
 }
 
 
@@ -55,7 +58,13 @@ class parseLib:
             head, tail = ntpath.split(bin_file)
 
             tail += '.db'
-            new_db_path = '../../files/' + tail
+
+            new_db_path =''
+            if getattr(sys, 'frozen', False):
+                new_db_path = os.path.join(sys._MEIPASS, 'files', tail)
+            else:
+                new_db_path = os.path.join(sys.path[0], 'files', tail)
+
             self.db = sqlite3.connect(new_db_path, uri=True)
             self.cur = self.db.cursor()
             self.initDb()
