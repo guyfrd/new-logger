@@ -13,6 +13,7 @@ if getattr(sys, 'frozen', False):
 else:
     icon_path = os.path.join(sys.path[0], 'files', 'icons')
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -45,7 +46,7 @@ class MainWindow(QMainWindow):
 
 
     def createActions(self):
-        icon_path = '../../files/icons/'
+
         open_bin_file = os.path.join(icon_path,'bin.png')
 
         self.openAct = QAction( QIcon(open_bin_file),
