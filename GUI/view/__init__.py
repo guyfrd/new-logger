@@ -1,6 +1,9 @@
 import sys
+import os
 from PySide2.QtWidgets import QApplication
-from  GUI.view.mainWindow import MainWindow
+print(sys.path)
+sys.path.append(os.path.join('new-log', 'GUI', 'view', 'mainWindow'))
+from view.mainWindow import MainWindow
 
 
 
