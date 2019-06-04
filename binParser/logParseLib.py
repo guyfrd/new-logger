@@ -30,7 +30,6 @@ type_to_field_dict = {
 }
 
 
-
 class parseLib:
     def __init__(self, bin_file, json_file, db_path):
         self.meta_domain = []
@@ -376,4 +375,3 @@ class parseLib:
         self.cur.execute(exec_str)
 
         return self.cur.fetchall()
-
