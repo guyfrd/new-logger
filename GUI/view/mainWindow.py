@@ -254,7 +254,7 @@ class MainWidget( QWidget):
             self.filterMsgComboBox.addItems(msg_by_domain)
 
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed =min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.curr_view_state = 'domain'
         self.msg_view.setModel(self.modle)
@@ -266,7 +266,7 @@ class MainWidget( QWidget):
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
         self.modle = self.dc.fetchDataByMsg(msg_type)
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(self.modle)
         self.curr_view_state = 'msg'
@@ -274,7 +274,7 @@ class MainWidget( QWidget):
     def fetchMoreClicked(self):
         model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.msg_view.setModel(model)
 
@@ -282,7 +282,7 @@ class MainWidget( QWidget):
     def fetchLessClicked(self):
         modle = self.dc.fetchLess()
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.msg_view.setModel(modle)
 
@@ -294,7 +294,7 @@ class MainWidget( QWidget):
         modle = self.dc.fetchOpenText(list)
 
         num_rows = self.dc.countRows()
-        rows_showed =  self.dc.dataShowedSoFar()
+        rows_showed =  min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(modle)
         self.curr_view_state = 'domain'
@@ -327,7 +327,7 @@ class MainWidget( QWidget):
 
         modle = self.dc.fetchBetweenDate(domain,msg,from_d,from_h ,to_d, to_h)
         num_rows = self.dc.countRows()
-        rows_showed =  self.dc.dataShowedSoFar()
+        rows_showed =  min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(modle)
         self.curr_view_state = 'domain'
@@ -336,7 +336,7 @@ class MainWidget( QWidget):
         self.modle = self.dc.fetchJumpToMsg(self.jump_to_msg_lineEdit.text())
         self.filterMsgComboBox.clear()
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.curr_view_state = 'domain'
         self.msg_view.setModel(self.modle)
