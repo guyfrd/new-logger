@@ -118,7 +118,7 @@ class MainWidget( QWidget):
         self.msg_view = QTableView()
         self.msg_view.setAlternatingRowColors(True)
         self.msg_view.setSortingEnabled(True)
-        self.msg_view.setSelectionBehavior(QTableView.SelectRows);
+        self.msg_view.setSelectionBehavior(QTableView.SelectRows)
         self.fetch_up_button =  QPushButton("up")
         self.fetch_down_button =  QPushButton("down")
         self.num_row_to_show_label= QLabel("lines to show:")
