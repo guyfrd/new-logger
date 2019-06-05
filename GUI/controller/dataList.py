@@ -19,8 +19,6 @@ class dataList:
     def __next__(self):
     
         if self.curr_end > len(self.data):
-            print(self.model_list)
-            print(self.curr_index)
             return self.model_list[self.curr_index]
         elif self.curr_index == 0 and len(self.model_list) == 0: 
             num_data = min(self.block_size, len(self.data))
@@ -69,7 +67,7 @@ class dataList:
     def createModel(self, start, end):
         if start == end:
             return None
-            
+
         model = QStandardItemModel(min(self.block_size, len(self.data) - self.curr_start),  len(self.model_meta_data) - 1)
         step = 1 if start < end else -1
 
