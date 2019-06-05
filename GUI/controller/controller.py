@@ -87,10 +87,6 @@ class dataController:
 
 
 
-
-
-
-
     def numDomain(self, domain):
         if domain =='ALL':
             num = self.parser_lib.countAll()
