@@ -43,10 +43,14 @@ class MainWindow(QMainWindow):
         if fileName:
             self.loadDb(fileName)
 
+    def save_to_file(self):
+        path, filtr =  QFileDialog.getSaveFileName(self)
+        print(path)
+        if path:
+            self.exportToFile(path)
 
 
     def createActions(self):
-
         open_bin_file = os.path.join(icon_path,'bin.png')
 
         self.openAct = QAction( QIcon(open_bin_file),
@@ -62,13 +66,17 @@ class MainWindow(QMainWindow):
         self.openDBact = QAction( QIcon(open_db),
                             "&Open...", self, shortcut= QKeySequence.Open,
                             statusTip="Open DB", triggered=self.openDB)
-
+        disk_icon_path= os.path.join(icon_path,'save.png')
+        self.saveToFileAct = QAction( QIcon(disk_icon_path),
+                            "&save to file...", self, shortcut= QKeySequence.Open,
+                            statusTip="save to file", triggered=self.save_to_file)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
         self.fileMenu.addAction(self.openJSONAct)
         self.fileMenu.addAction(self.openDBact)
+        self.fileMenu.addAction(self.saveToFileAct)
         self.fileMenu.addSeparator()
 
 
@@ -82,7 +90,7 @@ class MainWindow(QMainWindow):
         self.fileToolBar.addAction(self.openAct)
         self.fileToolBar.addAction(self.openJSONAct)
         self.fileToolBar.addAction(self.openDBact)
-
+        self.fileToolBar.addAction(self.saveToFileAct)
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
@@ -106,6 +114,9 @@ class MainWindow(QMainWindow):
     def loadMsgExpand(self, index):
         model = self.data_model.getMsgexpandModel(index)
         self.central_view.setSourceMsgExpanf(model)
+    
+    def exportToFile(self,path):
+        self.centralWidget.CW_exportToFile(path)
 
 
 class MainWidget( QWidget):
@@ -113,6 +124,7 @@ class MainWidget( QWidget):
         super(MainWidget, self).__init__()
         self.dc = controller
         self.curr_view_state = ''
+        self.curr_model = None
 
         # >>>>>>>>>>>>INIT TREE VIEW <<<<<<<<<<<<<<<<<<<<
         self.msg_view = QTableView()
@@ -230,7 +242,6 @@ class MainWidget( QWidget):
         self.setLayout(mainLayout)
 
         self.setWindowTitle("log message parser")
-        self.modle = None
 
     def initDomainCombo(self):
         self.filterDomainComboBox.clear()
@@ -243,11 +254,11 @@ class MainWidget( QWidget):
             return
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
         if self.filterDomainComboBox.currentText() == 'ALL':
-            self.modle = self.dc.fetchAllMsg()
+            self.curr_model = self.dc.fetchAllMsg()
             self.filterMsgComboBox.clear()
         else:
             domain = self.filterDomainComboBox.currentText()
-            self.modle = self.dc.fetchDatabyDomain(domain)
+            self.curr_model= self.dc.fetchDatabyDomain(domain)
             self.filterMsgComboBox.clear()
             self.filterMsgComboBox.addItem("ALL")
             msg_by_domain = self.dc.getMsgListByDomain(self.filterDomainComboBox.currentIndex() - 1)
@@ -257,46 +268,46 @@ class MainWidget( QWidget):
         rows_showed =min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.curr_view_state = 'domain'
-        self.msg_view.setModel(self.modle)
+        self.msg_view.setModel(self.curr_model)
 
     def msgComboChange(self):
         msg_type = self.filterMsgComboBox.currentText()
         if msg_type == 'ALL' or not msg_type:
             return
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
-        self.modle = self.dc.fetchDataByMsg(msg_type)
+        self.curr_model = self.dc.fetchDataByMsg(msg_type)
         num_rows = self.dc.countRows()
         rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
-        self.msg_view.setModel(self.modle)
+        self.msg_view.setModel(self.curr_model)
         self.curr_view_state = 'msg'
 
     def fetchMoreClicked(self):
-        model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
+        self.curr_model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
         num_rows = self.dc.countRows()
         rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
-        self.msg_view.setModel(model)
+        self.msg_view.setModel(self.curr_model)
 
 
     def fetchLessClicked(self):
-        modle = self.dc.fetchLess()
+        self.curr_model = self.dc.fetchLess()
         num_rows = self.dc.countRows()
         rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
-        self.msg_view.setModel(modle)
+        self.msg_view.setModel(self.curr_model)
 
     def openTextFeatchMsg(self):
         x= re.split(r',\s*(?![^()]*\))', self.filterPatternLineEdit.text())
         list = {}
         for i in x:
             list[i[:i.find("(")]] = (i[i.find("(")+1:i.find(")")].split(', '))
-        modle = self.dc.fetchOpenText(list)
+        self.curr_model = self.dc.fetchOpenText(list)
 
         num_rows = self.dc.countRows()
         rows_showed =  min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
-        self.msg_view.setModel(modle)
+        self.msg_view.setModel(self.curr_model)
         self.curr_view_state = 'domain'
 
     def numLineComboChange(self):
@@ -325,18 +336,22 @@ class MainWidget( QWidget):
         except ValueError:
             raise ValueError("Incorrect data format, should be HH:MM:SS")
 
-        modle = self.dc.fetchBetweenDate(domain,msg,from_d,from_h ,to_d, to_h)
+        self.curr_model = self.dc.fetchBetweenDate(domain,msg,from_d,from_h ,to_d, to_h)
         num_rows = self.dc.countRows()
         rows_showed =  min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
-        self.msg_view.setModel(modle)
+        self.msg_view.setModel(self.curr_model)
         self.curr_view_state = 'domain'
 
     def jumpToMsg(self):
-        self.modle = self.dc.fetchJumpToMsg(self.jump_to_msg_lineEdit.text())
+        self.curr_model = self.dc.fetchJumpToMsg(self.jump_to_msg_lineEdit.text())
         self.filterMsgComboBox.clear()
         num_rows = self.dc.countRows()
         rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.curr_view_state = 'domain'
-        self.msg_view.setModel(self.modle)
+        self.msg_view.setModel(self.curr_model)
+
+    def CW_exportToFile(self, path):
+        self.dc.DC_exportToFile(path)
+        

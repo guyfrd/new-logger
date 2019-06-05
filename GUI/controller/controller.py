@@ -85,12 +85,6 @@ class dataController:
     def dataShowedSoFar(self):
         return self.data_list.getDataShowd()
 
-
-
-
-
-
-
     def numDomain(self, domain):
         if domain =='ALL':
             num = self.parser_lib.countAll()
@@ -106,3 +100,8 @@ class dataController:
 
     def countRows(self):
         return len(self.curr_data)
+    
+    def DC_exportToFile(self,path):
+          with open(path,"w") as file:
+              for item in self.curr_data:
+                  file.write(str(item) + '\n')
