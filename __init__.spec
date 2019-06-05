@@ -3,10 +3,10 @@
 block_cipher = None
 
 
-a = Analysis(['__main__.py'],
-             pathex=['/home/osboxes/logger_parser/logger_parser'],
+a = Analysis(['__init__.py'],
+             pathex=['C:\\Users\\guyfr\\new-log\\new-logger'],
              binaries=[],
-             hiddenimports=["typing"],
+             hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -14,15 +14,16 @@ a = Analysis(['__main__.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False,
-             datas=[ ('files/icons/*.png', 'resources')]
+             datas=[ ('files/icons/*.png', 'files')]
 )
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           [],
           exclude_binaries=True,
-          name='__main__',
+          name='__init__',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -34,4 +35,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=True,
-               name='__main__')
+               name='__init__')

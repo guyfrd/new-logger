@@ -13,6 +13,7 @@ if getattr(sys, 'frozen', False):
 else:
     icon_path = os.path.join(sys.path[0], 'files', 'icons')
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -29,18 +30,15 @@ class MainWindow(QMainWindow):
 
     def open(self):
         fileName, filtr =  QFileDialog.getOpenFileName(self)
-        print("open file")
         if fileName:
             self.loadFile(fileName)
 
     def openJson(self):
-        print("openJson")
         fileName, filtr =  QFileDialog.getOpenFileName(self)
         if fileName:
             self.loadJSONFile(fileName)
 
     def openDB(self):
-        print("openDB")
         fileName, filtr =  QFileDialog.getOpenFileName(self)
         if fileName:
             self.loadDb(fileName)
@@ -48,7 +46,7 @@ class MainWindow(QMainWindow):
 
 
     def createActions(self):
-        icon_path = '../../files/icons/'
+
         open_bin_file = os.path.join(icon_path,'bin.png')
 
         self.openAct = QAction( QIcon(open_bin_file),
@@ -243,7 +241,6 @@ class MainWidget( QWidget):
     def domainComboChange(self):
         if self.filterDomainComboBox.currentText() == '':
             return
-        print("domainComboChange {}".format(self.filterDomainComboBox.currentText()))
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
         if self.filterDomainComboBox.currentText() == 'ALL':
             self.modle = self.dc.fetchAllMsg()
@@ -257,7 +254,7 @@ class MainWidget( QWidget):
             self.filterMsgComboBox.addItems(msg_by_domain)
 
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed =min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.curr_view_state = 'domain'
         self.msg_view.setModel(self.modle)
@@ -269,7 +266,7 @@ class MainWidget( QWidget):
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
         self.modle = self.dc.fetchDataByMsg(msg_type)
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(self.modle)
         self.curr_view_state = 'msg'
@@ -277,7 +274,7 @@ class MainWidget( QWidget):
     def fetchMoreClicked(self):
         model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.msg_view.setModel(model)
 
@@ -285,7 +282,7 @@ class MainWidget( QWidget):
     def fetchLessClicked(self):
         modle = self.dc.fetchLess()
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.msg_view.setModel(modle)
 
@@ -297,7 +294,7 @@ class MainWidget( QWidget):
         modle = self.dc.fetchOpenText(list)
 
         num_rows = self.dc.countRows()
-        rows_showed =  self.dc.dataShowedSoFar()
+        rows_showed =  min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(modle)
         self.curr_view_state = 'domain'
@@ -330,17 +327,16 @@ class MainWidget( QWidget):
 
         modle = self.dc.fetchBetweenDate(domain,msg,from_d,from_h ,to_d, to_h)
         num_rows = self.dc.countRows()
-        rows_showed =  self.dc.dataShowedSoFar()
+        rows_showed =  min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(modle)
         self.curr_view_state = 'domain'
 
     def jumpToMsg(self):
-
         self.modle = self.dc.fetchJumpToMsg(self.jump_to_msg_lineEdit.text())
         self.filterMsgComboBox.clear()
         num_rows = self.dc.countRows()
-        rows_showed = self.dc.dataShowedSoFar()
+        rows_showed = min(self.dc.dataShowedSoFar(), num_rows)
         self.num_msg_label.setText("{} from {} messages".format(rows_showed, num_rows))
         self.curr_view_state = 'domain'
         self.msg_view.setModel(self.modle)
