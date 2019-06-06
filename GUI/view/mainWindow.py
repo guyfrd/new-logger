@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         if fileName:
             self.loadDb(fileName)
 
-    def save_to_file(self):
+    def saveToFile(self):
         path, filtr =  QFileDialog.getSaveFileName(self)
         print(path)
         if path:
@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
         disk_icon_path= os.path.join(icon_path,'save.png')
         self.saveToFileAct = QAction( QIcon(disk_icon_path),
                             "&save to file...", self, shortcut= QKeySequence.Open,
-                            statusTip="save to file", triggered=self.save_to_file)
+                            statusTip="save to file", triggered=self.saveToFile)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
