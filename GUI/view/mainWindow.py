@@ -2,10 +2,11 @@ import os
 import sys
 from PySide2.QtCore import QFile
 from PySide2.QtGui import QIcon, QKeySequence
-from PySide2.QtWidgets import QMainWindow, QMessageBox, QTextEdit, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
+from PySide2.QtWidgets import QMainWindow,QApplication, QMessageBox, QTextEdit, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
 from GUI.controller.controller import dataController
 import re
 import datetime
+from GUI.view.plotWindow import Plot
 
 icon_path = ''
 if getattr(sys, 'frozen', False):
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
         self.createToolBars()
         self.createStatusBar()
         self.resize(1500, 800)
-
+       
 
     def open(self):
         fileName, filtr =  QFileDialog.getOpenFileName(self)
@@ -125,7 +126,7 @@ class MainWidget( QWidget):
         self.dc = controller
         self.curr_view_state = ''
         self.curr_model = None
-
+        self.windows = []
         # >>>>>>>>>>>>INIT TREE VIEW <<<<<<<<<<<<<<<<<<<<
         self.msg_view = QTableView()
         self.msg_view.setAlternatingRowColors(True)
@@ -139,8 +140,9 @@ class MainWidget( QWidget):
         self.jump_to_msg_label= QLabel("jump to message")
         self.jump_to_msg_lineEdit = QLineEdit()
         self.jump_to_msg_button = QPushButton("Show")
-
-
+        self.plot_button = QPushButton("Plot")
+        self.plot_button.setEnabled(False)
+        
         # layout #1 - dataView
         dataLayout = QGridLayout()
         dataLayout.addWidget(self.msg_view, 0, 1, 11, 3)
@@ -149,6 +151,7 @@ class MainWidget( QWidget):
         dataLayout.addWidget(self.jump_to_msg_button,5,0)
         dataLayout.addWidget(self.num_row_to_show_label, 0, 0)
         dataLayout.addWidget(self.num_row_to_show_combbox, 1,0)
+        dataLayout.addWidget(self.plot_button, 8,0)
         dataLayout.addWidget(self.fetch_down_button ,9 ,0,)
         dataLayout.addWidget(self.fetch_up_button , 10, 0)
         dataLayout.setColumnMinimumWidth(0,30)
@@ -231,7 +234,7 @@ class MainWidget( QWidget):
         self.num_row_to_show_combbox.currentIndexChanged.connect(self.numLineComboChange)
         self.time_filter_button.clicked.connect(self.timeFilterButtonPushed)
         self.jump_to_msg_button.clicked.connect(self.jumpToMsg)
-
+        self.plot_button.clicked.connect(self.plotButtonCliced)
         # parent layout
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.sourceGroupBox,1)
@@ -281,6 +284,10 @@ class MainWidget( QWidget):
         self.num_msg_label.setText("{} from {} messages".format(rows_showed , num_rows))
         self.msg_view.setModel(self.curr_model)
         self.curr_view_state = 'msg'
+        if msg_type == 'RAM_free':
+            self.plot_button.setEnabled(True)
+        
+
 
     def fetchMoreClicked(self):
         self.curr_model = self.dc.fetchMore(self.filterDomainComboBox.currentText())
@@ -354,4 +361,9 @@ class MainWidget( QWidget):
 
     def CW_exportToFile(self, path):
         self.dc.DC_exportToFile(path)
-        
+    
+    def plotButtonCliced(self):
+        plot_window = Plot(self.dc) 
+        self.windows.append(plot_window)
+        plot_window.show()
+       
