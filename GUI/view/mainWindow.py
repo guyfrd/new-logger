@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
-        self.resize(1500, 800)
+        self.resize(1000, 800)
        
 
     def open(self):
@@ -363,7 +363,14 @@ class MainWidget( QWidget):
         self.dc.DC_exportToFile(path)
     
     def plotButtonCliced(self):
-        plot_window = Plot(self.dc) 
+        data_set = self.dc.getDataSet(self.filterMsgComboBox.currentText())
+        time_axe = []
+        val_axe = []
+        for i in data_set:
+            time_axe.append(i[2])
+            val_axe.append(i[4])
+
+        plot_window = Plot(time_axe, val_axe) 
         self.windows.append(plot_window)
         plot_window.show()
        
