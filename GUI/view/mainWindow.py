@@ -367,7 +367,7 @@ class MainWidget( QWidget):
         time_axe = []
         val_axe = []
         for i in data_set:
-            time_axe.append(i[2])
+            time_axe.append(i[3])
             val_axe.append(i[4])
 
         plot_window = Plot(time_axe, val_axe) 

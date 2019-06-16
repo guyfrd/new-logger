@@ -35,7 +35,7 @@ class MyMplCanvas(FigureCanvas):
                                    QtWidgets.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
-        self.axes.plot(x, y)
+        self.axes.plot(x, y, "r")
     
     def compute_initial_figure(self):
         pass

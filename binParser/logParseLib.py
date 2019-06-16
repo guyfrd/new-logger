@@ -29,6 +29,11 @@ type_to_field_dict = {
     'bool' : 'TEXT'
 }
 
+log_file = None
+if len(sys.argv) > 1 and sys.argv[1] == 'log':
+    log_file = open('files/log', "w")
+    log_file.write(strftime("%a, %d %b %Y %H:%M:%S\n", gmtime()))
+    log_file.flush()
 
 class parseLib:
     def __init__(self, bin_file, json_file, db_path):
@@ -157,6 +162,9 @@ class parseLib:
             insert_str= ''
             if 'null' in curr_msg_struct and 'void' in curr_msg_struct.values():
                 insert_str = self.createInsertExp(curr_msg_id, curr_date, curr_hour,'null', curr_msg_name , None)
+                if log_file:
+                    log_file.write(insert_str)
+                    log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain ,msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ? )""",
@@ -165,6 +173,9 @@ class parseLib:
             elif 'char*' in curr_msg_struct .values():
                 decode_msg = self.readFlexMsg().rstrip('\x00')
                 insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'flex', curr_msg_name, decode_msg)
+                if log_file:
+                    log_file.write(insert_str)
+                    log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
@@ -173,6 +184,9 @@ class parseLib:
             else:
                 msg = self.readMsgStruct(curr_domain,curr_msg)
                 insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'struct', curr_msg_name,msg)
+                if log_file:
+                    log_file.write(insert_str)
+                    log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id,date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
