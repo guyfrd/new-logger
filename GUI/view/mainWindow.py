@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         self.createStatusBar()
         self.resize(1000, 800)
         self.setWindowTitle("Logger")
-        self.windows = []
+        self.widgets = []
 
     def open(self):
         fileName, filtr =  QFileDialog.getOpenFileName(self)
@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
         self.centralWidget.CW_exportToFile(path)
 
     def chartWindow(self):
-        plot_window = plotMainWidget() 
+        plot_window = plotMainWidget(self.dc) 
         self.setCentralWidget(plot_window)
         # self.windows.append(plot_window)
         # plot_window.show()
