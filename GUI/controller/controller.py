@@ -107,5 +107,4 @@ class dataController:
                   file.write(str(item) + '\n')
     
     def getDataSet(self, msg):
-        print("getDataSet {}".format(msg))
         return self.curr_data

@@ -6,7 +6,7 @@ from PySide2.QtWidgets import QMainWindow,QApplication, QMessageBox, QTextEdit, 
 from GUI.controller.controller import dataController
 import re
 import datetime
-from GUI.view.plotWindow import Plot
+from GUI.view.plotWindow import plotMainWidget
 
 icon_path = ''
 if getattr(sys, 'frozen', False):
@@ -27,7 +27,8 @@ class MainWindow(QMainWindow):
         self.createToolBars()
         self.createStatusBar()
         self.resize(1000, 800)
-       
+        self.setWindowTitle("Logger")
+        self.windows = []
 
     def open(self):
         fileName, filtr =  QFileDialog.getOpenFileName(self)
@@ -49,7 +50,9 @@ class MainWindow(QMainWindow):
         print(path)
         if path:
             self.exportToFile(path)
-
+    
+    def openChart(self):
+        self.chartWindow()
 
     def createActions(self):
         open_bin_file = os.path.join(icon_path,'bin.png')
@@ -71,7 +74,11 @@ class MainWindow(QMainWindow):
         self.saveToFileAct = QAction( QIcon(disk_icon_path),
                             "&save to file...", self, shortcut= QKeySequence.Open,
                             statusTip="save to file", triggered=self.saveToFile)
-
+        chart_icon_path= os.path.join(icon_path,'chart.png')
+        self.openChartAct = QAction( QIcon(chart_icon_path),
+                            "open chart windows", self, shortcut= QKeySequence.Open,
+                            statusTip="open chart windows", triggered=self.openChart)
+   
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
@@ -79,11 +86,10 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(self.openDBact)
         self.fileMenu.addAction(self.saveToFileAct)
         self.fileMenu.addSeparator()
-
+        self.fileMenu.addAction(self.openChartAct)
 
         self.editMenu = self.menuBar().addMenu("&Edit")
         self.menuBar().addSeparator()
-
 
 
     def createToolBars(self):
@@ -92,6 +98,7 @@ class MainWindow(QMainWindow):
         self.fileToolBar.addAction(self.openJSONAct)
         self.fileToolBar.addAction(self.openDBact)
         self.fileToolBar.addAction(self.saveToFileAct)
+        self.fileToolBar.addAction(self.openChartAct)
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
@@ -119,6 +126,11 @@ class MainWindow(QMainWindow):
     def exportToFile(self,path):
         self.centralWidget.CW_exportToFile(path)
 
+    def chartWindow(self):
+        plot_window = plotMainWidget() 
+        self.setCentralWidget(plot_window)
+        # self.windows.append(plot_window)
+        # plot_window.show()
 
 class MainWidget( QWidget):
     def __init__(self, controller):
@@ -126,7 +138,6 @@ class MainWidget( QWidget):
         self.dc = controller
         self.curr_view_state = ''
         self.curr_model = None
-        self.windows = []
         # >>>>>>>>>>>>INIT TREE VIEW <<<<<<<<<<<<<<<<<<<<
         self.msg_view = QTableView()
         self.msg_view.setAlternatingRowColors(True)
@@ -253,6 +264,7 @@ class MainWidget( QWidget):
 
 
     def domainComboChange(self):
+        self.plot_button.setEnabled(False)
         if self.filterDomainComboBox.currentText() == '':
             return
         self.dc.setModelSize(int(self.num_row_to_show_combbox.currentText()))
@@ -274,6 +286,7 @@ class MainWidget( QWidget):
         self.msg_view.setModel(self.curr_model)
 
     def msgComboChange(self):
+        self.plot_button.setEnabled(False)
         msg_type = self.filterMsgComboBox.currentText()
         if msg_type == 'ALL' or not msg_type:
             return
@@ -370,7 +383,7 @@ class MainWidget( QWidget):
             time_axe.append(i[3])
             val_axe.append(i[4])
 
-        plot_window = Plot(time_axe, val_axe) 
+        plot_window = Plot() 
         self.windows.append(plot_window)
         plot_window.show()
        

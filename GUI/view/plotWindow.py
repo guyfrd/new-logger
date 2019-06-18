@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import matplotlib
-
+from PySide2.QtWidgets import QPushButton,QSpacerItem, QHBoxLayout,QLineEdit,QWidget,QDialog, QMainWindow,QTextEdit, QVBoxLayout,QGridLayout,QLabel, QComboBox,QGroupBox, QGridLayout
 
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
@@ -19,74 +19,49 @@ progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
 
 
-class MyMplCanvas(FigureCanvas):
-    """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
+# class MyMplCanvas(FigureCanvas):
+#     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
-    def __init__(self,  x, y, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-
-
-        FigureCanvas.__init__(self, fig)
-        self.setParent(parent)
-
-        FigureCanvas.setSizePolicy(self,
-                                   QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)
-
-        self.axes.plot(x, y, "r")
-    
-    def compute_initial_figure(self):
-        pass
+#     def __init__(self,  x, y, parent=None, width=5, height=4, dpi=100):
+#         fig = Figure(figsize=(width, height), dpi=dpi)
+#         self.axes = fig.add_subplot(111)
+#         FigureCanvas.__init__(self, fig)
+#         self.setParent(parent)
+#         FigureCanvas.setSizePolicy(self,QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+#         FigureCanvas.updateGeometry(self)
+#         for tick in self.axes.get_xticklabels():
+#             tick.set_rotation(45)
+#         self.axes.plot(x, y, "-r*")
+#         print(type(self.axes))
+#     def compute_initial_figure(self):
+#         pass
 
     
 
-class Plot(QtWidgets.QMainWindow):
-    def __init__(self, time, val):
-        QtWidgets.QMainWindow.__init__(self)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setWindowTitle("application main window")
 
-        self.file_menu = QtWidgets.QMenu('&File', self)
-        self.file_menu.addAction('&Quit', self.fileQuit,
-                                 QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
-        self.menuBar().addMenu(self.file_menu)
+class plotMainWidget( QWidget):
+    def __init__(self):
+        super(plotMainWidget, self).__init__()
+        print("plotMainWidget")
 
-        self.help_menu = QtWidgets.QMenu('&Help', self)
-        self.menuBar().addSeparator()
-        self.menuBar().addMenu(self.help_menu)
+       
+        self.filter_groupBox = QGroupBox("Filters")
+        self.filter_msg_comboBox = QComboBox()
+        self.filter_msg_label = QLabel("Message:")
+        self.filter_msg_label.setBuddy(self.filter_msg_comboBox)
+        
+        layout = QGridLayout()
+        layout.setColumnMinimumWidth(9,500)
+        layout.setColumnMinimumWidth(1,30)
+        layout.addWidget(self.filter_msg_label, 0,0)
+        layout.addWidget(self.filter_msg_comboBox, 0, 2, 0, 8)
+        self.filter_groupBox.setLayout(layout)
+        
+        self.chart_groupBox = QGroupBox("Chart")
 
-        self.help_menu.addAction('&About', self.about)
 
-        self.main_widget = QtWidgets.QWidget(self)
-        l = QtWidgets.QVBoxLayout(self.main_widget)
-        sc = MyMplCanvas( time, val, self.main_widget, width=5, height=4, dpi=100)
-        l.addWidget(sc)
+        mainLayout = QGridLayout()
+        mainLayout.addWidget(self.filter_groupBox, 0, 0)
+        mainLayout.addWidget(self.chart_groupBox, 1,0, 9,0)
+        self.setLayout(mainLayout)
 
-     
-        self.main_widget.setFocus()
-        self.setCentralWidget(self.main_widget)
-
-        self.statusBar().showMessage("All hail matplotlib!", 2000)
-
-    def fileQuit(self):
-        self.close()
-
-    def closeEvent(self, ce):
-        self.fileQuit()
-
-    def about(self):
-        QtWidgets.QMessageBox.about(self, "About",
-                                    """embedding_in_qt5.py example
-Copyright 2005 Florent Rougon, 2006 Darren Dale, 2015 Jens H Nielsen
-
-This program is a simple example of a Qt5 application embedding matplotlib
-canvases.
-
-It may be used and modified with no restriction; raw copies as well as
-modified versions may be distributed without limitation.
-
-This is modified from the embedding in qt4 example to show the difference
-between qt4 and qt5"""
-                                )
