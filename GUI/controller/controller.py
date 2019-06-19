@@ -107,4 +107,5 @@ class dataController:
                   file.write(str(item) + '\n')
     
     def getDataSet(self, msg):
-        return self.curr_data
+        return self.parser_lib.queryMsgByType(msg)
+        # return self.curr_data

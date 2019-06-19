@@ -44,6 +44,7 @@ class plotMainWidget( QWidget):
         super(plotMainWidget, self).__init__()
         print("plotMainWidget")
         self.dc = controller
+        self.plot = None
         self.filter_groupBox = QGroupBox("Filters")
         self.filter_msg_comboBox = QComboBox()
         self.filter_msg_label = QLabel("Message:")
@@ -60,21 +61,29 @@ class plotMainWidget( QWidget):
         layout.addWidget(self.filter_msg_button, 0, 10)
         self.filter_groupBox.setLayout(layout)
         
-        self.chart_groupBox = QGroupBox("Chart")
+        self.plot_groupBox = QGroupBox("Chart")
 
 
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.filter_groupBox, 0, 0)
-        mainLayout.addWidget(self.chart_groupBox, 1,0, 9,0)
+        mainLayout.addWidget(self.plot_groupBox, 1,0, 9,0)
         self.setLayout(mainLayout)
 
     def filterButtonClicked(self):
         msg = self.filter_msg_comboBox.currentText()
-        data_set = self.dc.fetchDataByMsg(msg)
+        data_set = self.dc.getDataSet(msg) 
         time_axis = []
         val_axis = []
         for i in data_set:
             time_axis.append(i[3])
             val_axis.append(i[4])
-        MyMplCanvas(time_axis, val_axis)
-        print(msg)
+        
+        self.plot = MyMplCanvas(time_axis, val_axis)
+        self.curr_plot_layout = QVBoxLayout()
+        self.curr_plot_layout.addWidget(self.plot)
+        self.plot_groupBox.setLayout(self.curr_plot_layout)
+
+    def cleanPlot(self):
+        if(self.plot):
+            print("clean")
+            self.curr_plot_layout.removeWidget(self.plot)
