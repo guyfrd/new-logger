@@ -5,7 +5,7 @@ __pycache__/
 *.so
 *db
 *gpg
-
+.vscode/
 # Distribution / packaging
 bin/
 build/
