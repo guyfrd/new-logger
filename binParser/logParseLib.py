@@ -173,21 +173,24 @@ class parseLib:
 
             elif 'char*' in curr_msg_struct .values():
                 
-                decode_msg = self.readFlexMsg()
-                if not decode_msg: 
+                msg = self.readFlexMsg()
+                if not msg: 
                     break
 
-                decode_msg = decode_msg.rstrip('\x00')
-                insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'flex', curr_msg_name, decode_msg)
+                insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'flex', curr_msg_name, msg['body'], msg['index'])
                 if log_file:
                     log_file.write("{}\n".format(insert_str))
                     log_file.flush()
 
                 self.cur.execute(insert_str)
+                msg_str = 
+                if log_file:
+                    log_file.write("msg_str: {}\n".format(msg_str))
+                    log_file.flush()
+
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
-                                    (curr_msg_id , curr_date, curr_hour, curr_domain_string ,curr_msg_name, decode_msg))
-
+                                    (curr_msg_id , curr_date, curr_hour, curr_domain_string ,curr_msg_name,json.dumps(msg)))
             else:
                 msg = self.readMsgStruct(curr_domain,curr_msg)
                 if not msg:
@@ -227,23 +230,32 @@ class parseLib:
         self.curr_byte += 1
         msg_index = self.bin_data[self.curr_byte]
         self.curr_byte += 1
+        end_msg_byte = self.curr_byte + flex_size
+        if log_file:
+            log_file.write("flex msg: size:{} index:{}\n".format(flex_size, msg_index))
+            log_file.flush()
+
 
         if self.curr_byte + flex_size > self.file_size:
             return
 
         msg_byte_arr = bytearray()
-        for i in range(flex_size):
+
+        while self.curr_byte < end_msg_byte:
             msg_byte_arr.append(self.bin_data[self.curr_byte])
             self.curr_byte += 1
-        decode_msg = msg_byte_arr.decode()
-        # print(decode_msg.replace('\x00', '*'))
-        return decode_msg
+
+        if log_file:
+            log_file.write("msg body: {}\n".format(msg_byte_arr.decode))
+            log_file.flush()
+
+        decode_msg = msg_byte_arr.decode().rstrip('\x00')
+        return {'index': msg_index, 'body': decode_msg}
     
     def readMsgStruct(self, domain, msg_type):
     
         msg_struct = self.compile_msg_struct[domain][msg_type]
         unpack = msg_struct.unpack_from(self.bin_data, self.curr_byte)
-        print(unpack)
         size = msg_struct.size
         self.curr_byte += msg_struct.size
         if self.curr_byte > self.file_size:
@@ -254,17 +266,16 @@ class parseLib:
             if type(i) is bytes:
                 bytes_without_null = i.partition(b'\0')[0]
                 try:
-                    print(bytes_without_null)
                     unpack_list.append(bytes_without_null.decode("utf-8").strip())
                 except: 
-                    print("can't decode the message to string {}".format(bytes_without_null))
+                    if log_file:
+                        log_file.write("can't decode the message to string {}\n".format(bytes_without_null))
                     return
             else:
                 unpack_list.append(i)
 
         msg_with_value = {}
         index = 0
-        # print("unpack_list: {}".format(unpack_list))
         for field in self.msg_type_struct[domain][msg_type]:
             
             msg_with_value[field] = unpack_list[index]
@@ -290,7 +301,8 @@ class parseLib:
 
         create_table_str += ")"
         self.cur.execute(drop_str)
-        print(create_table_str)
+        if log_file:
+            log_file.write("{}\n".format(create_table_str))
         self.cur.execute(create_table_str)
         self.db.commit()
 
