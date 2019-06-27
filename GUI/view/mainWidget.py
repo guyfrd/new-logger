@@ -2,8 +2,8 @@ import os
 import sys
 import re
 import datetime
-from PySide2.QtWidgets import QMainWindow,QApplication,QStackedWidget, QMessageBox, QTextEdit, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
-
+from PySide2.QtWidgets import QTextEdit, QMainWindow,QApplication,QStackedWidget, QMessageBox, QTextEdit, QPushButton, QWidget,QVBoxLayout, QFileDialog,QComboBox,QGridLayout,QLineEdit,QCheckBox, QLabel, QAction, QGroupBox, QTableView,QHBoxLayout
+from PySide2.QtCore import  QModelIndex
 
 
 
@@ -18,6 +18,10 @@ class MainWidget( QWidget):
         self.msg_view.setAlternatingRowColors(True)
         self.msg_view.setSortingEnabled(True)
         self.msg_view.setSelectionBehavior(QTableView.SelectRows)
+        
+        self.msg_expand = QTextEdit()
+        self.msg_expand.setReadOnly(True)
+
         self.fetch_up_button =  QPushButton("up")
         self.fetch_down_button =  QPushButton("down")
         self.num_row_to_show_label= QLabel("lines to show:")
@@ -28,9 +32,11 @@ class MainWidget( QWidget):
         self.jump_to_msg_button = QPushButton("Show")
 
         
+
         # layout #1 - dataView
         dataLayout = QGridLayout()
         dataLayout.addWidget(self.msg_view, 0, 1, 11, 3)
+        dataLayout.addWidget(self.msg_expand, 0 ,9, 11, 10)
         dataLayout.addWidget(self.jump_to_msg_label,3,0)
         dataLayout.addWidget(self.jump_to_msg_lineEdit,4,0)
         dataLayout.addWidget(self.jump_to_msg_button,5,0)
@@ -118,6 +124,8 @@ class MainWidget( QWidget):
         self.num_row_to_show_combbox.currentIndexChanged.connect(self.numLineComboChange)
         self.time_filter_button.clicked.connect(self.timeFilterButtonPushed)
         self.jump_to_msg_button.clicked.connect(self.jumpToMsg)
+        self.msg_view.clicked[QModelIndex].connect(self.itemToExpand)
+
         # parent layout
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.sourceGroupBox,1)
@@ -128,6 +136,12 @@ class MainWidget( QWidget):
         self.setLayout(mainLayout)
 
         self.setWindowTitle("log message parser")
+
+    def itemToExpand(self, item):
+        self.msg_expand.setText(item.data())
+        # print(item.data())
+
+        # print(item.row())
 
     def initDomainCombo(self):
         self.filterDomainComboBox.clear()

@@ -164,7 +164,7 @@ class parseLib:
             if 'null' in curr_msg_struct and 'void' in curr_msg_struct.values():
                 insert_str = self.createInsertExp(curr_msg_id, curr_date, curr_hour,'null', curr_msg_name , None)
                 if log_file:
-                    log_file.write("{}\n".format(insert_str))
+                    log_file.write("{}\n curr_byte:{}-------------------------------\n".format(insert_str, self.curr_byte))
                     log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain ,msg_type, payload)
@@ -181,16 +181,15 @@ class parseLib:
                 if log_file:
                     log_file.write("{}\n".format(insert_str))
                     log_file.flush()
-
+                msg_str = json.dumps(msg)
                 self.cur.execute(insert_str)
-                msg_str = 
                 if log_file:
-                    log_file.write("msg_str: {}\n".format(msg_str))
+                    log_file.write("msg_str: {}\n curr_byte:{}-------------------------------\n".format(msg_str, self.curr_byte))
                     log_file.flush()
 
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
-                                    (curr_msg_id , curr_date, curr_hour, curr_domain_string ,curr_msg_name,json.dumps(msg)))
+                                    (curr_msg_id , curr_date, curr_hour, curr_domain_string ,curr_msg_name,msg_str))
             else:
                 msg = self.readMsgStruct(curr_domain,curr_msg)
                 if not msg:
@@ -198,7 +197,7 @@ class parseLib:
 
                 insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'struct', curr_msg_name,msg)
                 if log_file:
-                    log_file.write("{}\n".format(insert_str))
+                    log_file.write("{}\ncurr_byte:{} -------------------------------\n".format(insert_str, self.curr_byte))
                     log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id,date, hour, domain, msg_type, payload)
@@ -232,7 +231,7 @@ class parseLib:
         self.curr_byte += 1
         end_msg_byte = self.curr_byte + flex_size
         if log_file:
-            log_file.write("flex msg: size:{} index:{}\n".format(flex_size, msg_index))
+            log_file.write("flex msg: size:{} index:{} curr_byte:{}\n".format(flex_size, msg_index, self.curr_byte))
             log_file.flush()
 
 
@@ -246,10 +245,11 @@ class parseLib:
             self.curr_byte += 1
 
         if log_file:
-            log_file.write("msg body: {}\n".format(msg_byte_arr.decode))
+            log_file.write("msg body: {}\n".format(msg_byte_arr))
             log_file.flush()
 
         decode_msg = msg_byte_arr.decode().rstrip('\x00')
+
         return {'index': msg_index, 'body': decode_msg}
     
     def readMsgStruct(self, domain, msg_type):
