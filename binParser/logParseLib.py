@@ -29,6 +29,11 @@ type_to_field_dict = {
     'bool' : 'TEXT'
 }
 
+log_file = None
+if len(sys.argv) > 1 and sys.argv[1] == 'log':
+    log_file = open('files/log', "w")
+    log_file.write(strftime("%a, %d %b %Y %H:%M:%S\n", gmtime()))
+    log_file.flush()
 
 class parseLib:
     def __init__(self, bin_file, json_file, db_path):
@@ -155,85 +160,127 @@ class parseLib:
             curr_msg_struct = self.msg_type_struct[curr_domain][curr_msg]
 
             insert_str= ''
+
             if 'null' in curr_msg_struct and 'void' in curr_msg_struct.values():
                 insert_str = self.createInsertExp(curr_msg_id, curr_date, curr_hour,'null', curr_msg_name , None)
+                if log_file:
+                    log_file.write("{}\n".format(insert_str))
+                    log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain ,msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ? )""",
                                     (curr_msg_id, curr_date,curr_hour, curr_domain_string ,curr_msg_name, ''))
 
             elif 'char*' in curr_msg_struct .values():
-                decode_msg = self.readFlexMsg().rstrip('\x00')
-                insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'flex', curr_msg_name, decode_msg)
+                
+                msg = self.readFlexMsg()
+                if not msg: 
+                    break
+
+                insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'flex', curr_msg_name, msg['body'], msg['index'])
+                if log_file:
+                    log_file.write("{}\n".format(insert_str))
+                    log_file.flush()
+
                 self.cur.execute(insert_str)
+                msg_str = 
+                if log_file:
+                    log_file.write("msg_str: {}\n".format(msg_str))
+                    log_file.flush()
+
                 self.cur.execute("""INSERT INTO messages(msg_id, date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
-                                    (curr_msg_id , curr_date, curr_hour, curr_domain_string ,curr_msg_name, decode_msg))
-
+                                    (curr_msg_id , curr_date, curr_hour, curr_domain_string ,curr_msg_name,json.dumps(msg)))
             else:
                 msg = self.readMsgStruct(curr_domain,curr_msg)
+                if not msg:
+                    break
+
                 insert_str = self.createInsertExp(curr_msg_id,curr_date, curr_hour,'struct', curr_msg_name,msg)
+                if log_file:
+                    log_file.write("{}\n".format(insert_str))
+                    log_file.flush()
                 self.cur.execute(insert_str)
                 self.cur.execute("""INSERT INTO messages(msg_id,date, hour, domain, msg_type, payload)
                                     VALUES (?, ?, ?, ?, ?, ?)""",
                                     (curr_msg_id, curr_date, curr_hour, curr_domain_string ,curr_msg_name, str(msg)))
 
+        
         self.db.commit()
 
-    def createInsertExp(self,msg_id, date, hour ,msg_type, msg_name ,msg):
+    def createInsertExp(self,msg_id, date, hour ,msg_type, msg_name , msg, msg_index = 0):
         insert_str = "INSERT INTO {} VALUES ({}, {}, \'{}\', \'{}\'".format(msg_name, 'null', msg_id, date, hour)
         if msg_type == 'struct':
             for i in msg:
-                insert_str += ', '
-                insert_str += str(msg[i])
+                if isinstance(msg[i], str) or isinstance(msg[i], bool):
+                    insert_str +=", \'{}\'".format(str(msg[i]))
+                else: 
+                    insert_str +=", {}".format(str(msg[i]))
+                #insert_str += str(msg[i])
         elif msg_type == 'flex':
-            insert_str += ', '
-            insert_str += str(len(msg))
-            insert_str += ', '
-            insert_str += '\'{}\''.format(msg)
-
+            insert_str += ", {} , {}, \'{}\'".format(str(len(msg)), msg_index, msg)
+            
         insert_str += ")"
-
-        return insert_str
+    
+        return insert_str.strip()
 
 
     def readFlexMsg(self):
         flex_size = self.bin_data[self.curr_byte]
         self.curr_byte += 1
+        msg_index = self.bin_data[self.curr_byte]
+        self.curr_byte += 1
+        end_msg_byte = self.curr_byte + flex_size
+        if log_file:
+            log_file.write("flex msg: size:{} index:{}\n".format(flex_size, msg_index))
+            log_file.flush()
+
 
         if self.curr_byte + flex_size > self.file_size:
             return
 
         msg_byte_arr = bytearray()
-        for i in range(flex_size):
+
+        while self.curr_byte < end_msg_byte:
             msg_byte_arr.append(self.bin_data[self.curr_byte])
             self.curr_byte += 1
-        decode_msg = msg_byte_arr.decode()
-        return decode_msg
 
+        if log_file:
+            log_file.write("msg body: {}\n".format(msg_byte_arr.decode))
+            log_file.flush()
+
+        decode_msg = msg_byte_arr.decode().rstrip('\x00')
+        return {'index': msg_index, 'body': decode_msg}
+    
     def readMsgStruct(self, domain, msg_type):
-        # build format string for the struct
-
+    
         msg_struct = self.compile_msg_struct[domain][msg_type]
         unpack = msg_struct.unpack_from(self.bin_data, self.curr_byte)
         size = msg_struct.size
         self.curr_byte += msg_struct.size
-
+        if self.curr_byte > self.file_size:
+            return
         # convert from bytestring to string
         unpack_list = []
         for i in unpack:
             if type(i) is bytes:
                 bytes_without_null = i.partition(b'\0')[0]
-                unpack_list.append(bytes_without_null.decode("utf-8").strip())
+                try:
+                    unpack_list.append(bytes_without_null.decode("utf-8").strip())
+                except: 
+                    if log_file:
+                        log_file.write("can't decode the message to string {}\n".format(bytes_without_null))
+                    return
             else:
                 unpack_list.append(i)
 
         msg_with_value = {}
         index = 0
-        for i in self.msg_type_struct[domain][msg_type]:
-            msg_with_value[i] = unpack_list[index]
+        for field in self.msg_type_struct[domain][msg_type]:
+            
+            msg_with_value[field] = unpack_list[index]
             index += 1
-
+      
         return msg_with_value
 
     def creteMsgTable(self, msg_type, msg):
@@ -254,6 +301,8 @@ class parseLib:
 
         create_table_str += ")"
         self.cur.execute(drop_str)
+        if log_file:
+            log_file.write("{}\n".format(create_table_str))
         self.cur.execute(create_table_str)
         self.db.commit()
 
