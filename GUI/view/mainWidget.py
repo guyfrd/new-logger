@@ -35,8 +35,8 @@ class MainWidget( QWidget):
 
         # layout #1 - dataView
         dataLayout = QGridLayout()
-        dataLayout.addWidget(self.msg_view, 0, 1, 11, 3)
-        dataLayout.addWidget(self.msg_expand, 0 ,9, 11, 10)
+        dataLayout.addWidget(self.msg_view, 0, 1, 11, 6)
+        dataLayout.addWidget(self.msg_expand, 0 ,7, 11, 10)
         dataLayout.addWidget(self.jump_to_msg_label,3,0)
         dataLayout.addWidget(self.jump_to_msg_lineEdit,4,0)
         dataLayout.addWidget(self.jump_to_msg_button,5,0)
@@ -46,7 +46,7 @@ class MainWidget( QWidget):
         dataLayout.addWidget(self.fetch_up_button , 10, 0)
         dataLayout.setColumnMinimumWidth(0,30)
         dataLayout.setColumnStretch(1, 30)
-        dataLayout.setColumnStretch(2, 10)
+        dataLayout.setColumnStretch(7, 15)
         self.sourceGroupBox = QGroupBox("Data")
         self.sourceGroupBox.setLayout(dataLayout)
 

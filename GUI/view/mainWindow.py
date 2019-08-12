@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
-        self.resize(1300, 800)
+        self.resize(1400, 800)
         self.setWindowTitle("Logger")
         self.setCentralWidget(self.widget_stack)
 

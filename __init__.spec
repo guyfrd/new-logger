@@ -14,7 +14,7 @@ a = Analysis(['__init__.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False,
-             datas=[ ('files/icons/*.png', 'files')]
+             datas=[ ('files/icons/*.png', 'files/icons')]
 )
 
 pyz = PYZ(a.pure, a.zipped_data,
@@ -23,7 +23,7 @@ exe = EXE(pyz,
           a.scripts,
           [],
           exclude_binaries=True,
-          name='__init__',
+          name='logger',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -35,4 +35,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=True,
-               name='__init__')
+               name='logger')

@@ -301,8 +301,10 @@ class parseLib:
 
         create_table_str += ")"
         self.cur.execute(drop_str)
+        
         if log_file:
             log_file.write("{}\n".format(create_table_str))
+            log_file.flush()
         self.cur.execute(create_table_str)
         self.db.commit()
 
