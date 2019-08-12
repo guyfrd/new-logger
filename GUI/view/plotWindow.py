@@ -7,7 +7,7 @@ from PySide2.QtWidgets import QPushButton,QSpacerItem, QHBoxLayout,QLineEdit,QWi
 
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
-from PySide2 import QtCore, QtWidgets, QtCharts
+from PySide2 import QtCore, QtWidgets
 
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
